@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Livros Emprestados</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <h1>📚 Livros Emprestados</h1>
+        <nav>
+            <a href="index.html">Início</a>
+            <a href="emprestimos.html">Livros Emprestados</a>
+        </nav>
+    </header>
+    
+    <div class="container emprestimos-container">
+        <h2>Lista de Livros Emprestados</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Número do Tombo</th>
+                    <th>Título (QTD)</th>
+                    <th>Aluno/Professor</th>
+                    <th>Turma/Série</th>
+                    <th>Data do Empréstimo</th>
+                    <th>Data Máxima de Devolução</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody id="tabela-emprestimos">
+                <!-- Livros emprestados serão listados aqui -->
+            </tbody>
+        </table>
+    </div>
+    
+    <footer>
+        <p>&copy; 2025 Biblioteca Online. Todos os direitos reservados.</p>
+    </footer>
+    
+    <script src="script.js"></script>
+</body>
+</html>
