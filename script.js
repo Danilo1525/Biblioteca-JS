@@ -149,7 +149,27 @@ function mostrarLivro(livro) {
         `📖 ${livro.titulo} - ${livro.autor} (Editora: ${livro.editora}, Gênero: ${livro.genero})`;
 }
 
-// 📌 Função para listar livros emprestados
+// 📌 Função para confirmar devolução sem remover o registro
+function confirmarDevolucao(id) {
+    let tx = db.transaction("emprestimos", "readwrite");
+    let store = tx.objectStore("emprestimos");
+
+    let request = store.get(id);
+    request.onsuccess = function () {
+        let emprestimo = request.result;
+        if (emprestimo) {
+            emprestimo.devolvido = true;
+            store.put(emprestimo).onsuccess = function () {
+                alert("Livro devolvido com sucesso!");
+                listarEmprestimos();
+            };
+        } else {
+            alert("Empréstimo não encontrado.");
+        }
+    };
+}
+
+// 📌 Função para listar livros emprestados com cores para status
 function listarEmprestimos() {
     let tabela = document.getElementById("tabela-emprestimos");
     if (!tabela) {
@@ -161,7 +181,7 @@ function listarEmprestimos() {
     let store = tx.objectStore("emprestimos");
     let request = store.openCursor();
 
-    tabela.innerHTML = ""; // Limpa a tabela antes de atualizar
+    tabela.innerHTML = "";
 
     request.onsuccess = function (event) {
         let cursor = event.target.result;
@@ -169,21 +189,30 @@ function listarEmprestimos() {
             let emprestimo = cursor.value;
             let row = document.createElement("tr");
 
-            row.innerHTML = `
-            <td>${emprestimo.numeroTombo}</td>
-            <td>${emprestimo.titulo} (QTD: ${emprestimo.quantidade})</td> 
-            <td>
-    ${emprestimo.estudante ? `Aluno: ${emprestimo.estudante}` : `Prof: ${emprestimo.prof}`} - Turma:${emprestimo.turmas} (${emprestimo.serie})
-</td>
+            // Verifica o status do empréstimo
+            let hoje = new Date();
+            let dataMaxima = new Date(emprestimo.dataMaxima);
+            let classe = "";
 
-            <td>${emprestimo.dataEmprestimo}</td>
-            <td>${emprestimo.dataMaxima}</td>
-            <td>
-                <button onclick="confirmarDevolucao(${emprestimo.id})">✔️ Confirmar</button>
-                <button onclick="removerEmprestimo(${emprestimo.id})">❌ Remover</button>
-            </td>
-        `;
-        
+            if (emprestimo.devolvido) {
+                classe = "devolvido"; // Verde para devolvidos
+            } else if (hoje > dataMaxima) {
+                classe = "atrasado"; // Vermelho para atrasados
+            }
+
+            row.className = classe;
+
+            row.innerHTML = `
+                <td>${emprestimo.devolvido ? '✔️ Devolvido' : (hoje > dataMaxima ? '❌ Atrasado' : '⏳ Em andamento')}</td>
+                <td>${emprestimo.numeroTombo}</td>
+                <td>${emprestimo.titulo} (QTD: ${emprestimo.quantidade})</td>
+                <td>${emprestimo.estudante ? `Aluno: ${emprestimo.estudante}` : `Prof: ${emprestimo.prof}`} - Turma: ${emprestimo.turmas} (${emprestimo.serie})</td>
+                <td>${emprestimo.dataEmprestimo}</td>
+                <td>${emprestimo.dataMaxima}</td>
+                <td>
+                    ${!emprestimo.devolvido ? `<button onclick="confirmarDevolucao(${emprestimo.id})">✔️ Confirmar</button>` : "Devolvido"}
+                </td>
+            `;
             tabela.appendChild(row);
             cursor.continue();
         } else {
@@ -191,24 +220,11 @@ function listarEmprestimos() {
         }
     };
 }
-// 📌 Função para confirmar devolução
-function confirmarDevolucao(id) {
-    let tx = db.transaction("emprestimos", "readwrite");
-    let store = tx.objectStore("emprestimos");
 
-    store.delete(id).onsuccess = function () {
-        alert("Livro devolvido com sucesso!");
-        listarEmprestimos(); // Atualiza a lista
-    };
-}
-
-// 📌 Função para remover um empréstimo
-function removerEmprestimo(id) {
-    let tx = db.transaction("emprestimos", "readwrite");
-    let store = tx.objectStore("emprestimos");
-
-    store.delete(id).onsuccess = function () {
-        alert("Empréstimo removido!");
-        listarEmprestimos(); // Atualiza a lista
-    };
-}
+// 📌 CSS para status de empréstimo
+const style = document.createElement('style');
+style.innerHTML = `
+    .atrasado { background-color: #f8d7da; } /* Vermelho para atrasados */
+    .devolvido { background-color: #d4edda; } /* Verde para devolvidos */
+`;
+document.head.appendChild(style);
