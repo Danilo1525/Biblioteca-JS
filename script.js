@@ -211,12 +211,46 @@ function listarEmprestimos() {
                 <td>${emprestimo.dataMaxima}</td>
                 <td>
                     ${!emprestimo.devolvido ? `<button onclick="confirmarDevolucao(${emprestimo.id})">✔️ Confirmar</button>` : "Devolvido"}
+                    <button onclick="apagarEmprestimoDireto('${emprestimo.numeroTombo}')">🗑️ Apagar</button>
                 </td>
             `;
             tabela.appendChild(row);
             cursor.continue();
         } else {
             console.log("Nenhum empréstimo encontrado.");
+        }
+    };
+}
+// 📌 Função para apagar empréstimo diretamente da tabela
+function apagarEmprestimoDireto(numeroTombo) {
+    let confirmar = confirm(`Tem certeza que deseja apagar o empréstimo do livro com tombo ${numeroTombo}?`);
+    
+    if (!confirmar) return;
+
+    let tx = db.transaction("emprestimos", "readwrite");
+    let store = tx.objectStore("emprestimos");
+    let request = store.openCursor();
+
+    let encontrado = false;
+
+    request.onsuccess = function (event) {
+        let cursor = event.target.result;
+        if (cursor) {
+            let emprestimo = cursor.value;
+
+            if (emprestimo.numeroTombo === numeroTombo) {
+                encontrado = true;
+                store.delete(cursor.key).onsuccess = function () {
+                    alert(`O empréstimo do livro "${emprestimo.titulo}" foi removido.`);
+                    listarEmprestimos();
+                };
+            } else {
+                cursor.continue();
+            }
+        } else {
+            if (!encontrado) {
+                alert("Nenhum empréstimo encontrado para esse número de tombo.");
+            }
         }
     };
 }
