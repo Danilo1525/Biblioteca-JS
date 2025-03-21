@@ -202,15 +202,14 @@ function listarEmprestimos() {
             let emprestimo = cursor.value;
             let row = document.createElement("tr");
 
-            // Verifica o status do empréstimo
             let hoje = new Date();
             let dataMaxima = new Date(emprestimo.dataMaxima);
             let classe = "";
 
             if (emprestimo.devolvido) {
-                classe = "devolvido"; // Verde para devolvidos
+                classe = "devolvido";
             } else if (hoje > dataMaxima) {
-                classe = "atrasado"; // Vermelho para atrasados
+                classe = "atrasado";
             }
 
             row.className = classe;
@@ -219,17 +218,28 @@ function listarEmprestimos() {
                 <td>${emprestimo.devolvido ? '✔️ Devolvido' : (hoje > dataMaxima ? '❌ Atrasado' : '⏳ Em andamento')}</td>
                 <td>${emprestimo.numeroTombo}</td>
                 <td>${emprestimo.titulo} (QTD: ${emprestimo.quantidade})</td>
-                <td>${emprestimo.estudante ? `Aluno: ${emprestimo.estudante}` : `Prof: ${emprestimo.prof}`} - Turma: ${emprestimo.turmas} (${emprestimo.serie})</td>
+                <td>${emprestimo.estudante ? `Aluno: ${emprestimo.estudante}` : `Prof: ${emprestimo.prof}`} - Turma: ${emprestimo.turma} (${emprestimo.serie})</td>
                 <td>${emprestimo.dataEmprestimo}</td>
                 <td>${emprestimo.dataMaxima}</td>
                 <td>
                     ${!emprestimo.devolvido ? `<button onclick="confirmarDevolucao(${emprestimo.id})">✔️ Confirmar</button>` : "Devolvido"}
+                    <button onclick="apagarEmprestimo(${emprestimo.id})">❌ Apagar</button>
+                </td>
             `;
             tabela.appendChild(row);
             cursor.continue();
         } else {
             console.log("Nenhum empréstimo encontrado.");
         }
+    };
+}
+function apagarEmprestimo(id) {
+    let tx = db.transaction("emprestimos", "readwrite");
+    let store = tx.objectStore("emprestimos");
+
+    store.delete(id).onsuccess = function () {
+        alert("Empréstimo removido com sucesso!");
+        listarEmprestimos();
     };
 }
 
