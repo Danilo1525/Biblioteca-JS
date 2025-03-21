@@ -65,17 +65,30 @@ function carregarLivrosDoJSON() {
 
 // 📌 Função para registrar empréstimo com data máxima de devolução
 function emprestarLivro() {
-    let select = document.getElementById("tombo_emprestimo");
-    let numeroTombo = select.value; // Agora pegamos o valor do <select>
-    
-    let estudante = document.getElementById("nome_estudante").value;
-    let prof = document.getElementById("nome_professor").value;
-    let serieSelect = document.getElementById("serie_estudante");
-    let serie = serieSelect.options[serieSelect.selectedIndex].text; // Pega o texto completo
-
+    let numeroTombo = document.getElementById("tombo_emprestimo").value.trim();
+    let quantidade = document.getElementById("quantidade_emprestimo").value.trim();
+    let tipoPessoa = document.getElementById("tipo_pessoa").value;
+    let estudante = document.getElementById("nome_estudante").value.trim();
+    let prof = document.getElementById("nome_professor").value.trim();
+    let serie = document.getElementById("serie_estudante").value;
+    let turma = document.getElementById("turma").value;
     let dataMaxima = document.getElementById("data_devolucao").value;
-    let turmas = document.getElementById("turma").value;
-    let quantidade = document.getElementById("quantidade_emprestimo").value
+
+    // Verificação de campos obrigatórios
+    if (!numeroTombo || !quantidade || !tipoPessoa || !dataMaxima) {
+        alert("⚠️ Por favor, preencha todos os campos obrigatórios.");
+        return;
+    }
+
+    // Verificação específica para aluno e professor
+    if (tipoPessoa === "aluno" && (!estudante || !serie)) {
+        alert("⚠️ Para alunos, é necessário informar o nome e a série.");
+        return;
+    }
+    if (tipoPessoa === "professor" && !prof) {
+        alert("⚠️ Para professores, é necessário informar o nome.");
+        return;
+    }
 
     let tx = db.transaction(["livros", "emprestimos"], "readwrite");
     let store = tx.objectStore("livros");
@@ -92,7 +105,7 @@ function emprestarLivro() {
                 estudante,
                 prof,
                 serie,
-                turmas,
+                turma,
                 dataEmprestimo: new Date().toLocaleDateString(),
                 dataMaxima,
                 devolvido: false
@@ -211,46 +224,11 @@ function listarEmprestimos() {
                 <td>${emprestimo.dataMaxima}</td>
                 <td>
                     ${!emprestimo.devolvido ? `<button onclick="confirmarDevolucao(${emprestimo.id})">✔️ Confirmar</button>` : "Devolvido"}
-                    <button onclick="apagarEmprestimoDireto('${emprestimo.numeroTombo}')">🗑️ Apagar</button>
-                </td>
             `;
             tabela.appendChild(row);
             cursor.continue();
         } else {
             console.log("Nenhum empréstimo encontrado.");
-        }
-    };
-}
-// 📌 Função para apagar empréstimo diretamente da tabela
-function apagarEmprestimoDireto(numeroTombo) {
-    let confirmar = confirm(`Tem certeza que deseja apagar o empréstimo do livro com tombo ${numeroTombo}?`);
-    
-    if (!confirmar) return;
-
-    let tx = db.transaction("emprestimos", "readwrite");
-    let store = tx.objectStore("emprestimos");
-    let request = store.openCursor();
-
-    let encontrado = false;
-
-    request.onsuccess = function (event) {
-        let cursor = event.target.result;
-        if (cursor) {
-            let emprestimo = cursor.value;
-
-            if (emprestimo.numeroTombo === numeroTombo) {
-                encontrado = true;
-                store.delete(cursor.key).onsuccess = function () {
-                    alert(`O empréstimo do livro "${emprestimo.titulo}" foi removido.`);
-                    listarEmprestimos();
-                };
-            } else {
-                cursor.continue();
-            }
-        } else {
-            if (!encontrado) {
-                alert("Nenhum empréstimo encontrado para esse número de tombo.");
-            }
         }
     };
 }
