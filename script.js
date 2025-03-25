@@ -46,8 +46,8 @@ function carregarLivrosDoJSON() {
             let store = tx.objectStore("livros");
 
             data.forEach(livro => {
-                store.add({
-                    numeroTombo: String(livro.numeroTombo), // 🔹 Salva sempre como string
+                let livroObj = {
+                    numeroTombo: String(livro.numeroTombo), // 🔹 Sempre salvar como string
                     titulo: livro.TITULO,
                     autor: livro.AUTOR,
                     editora: livro.EDITORA,
@@ -55,7 +55,10 @@ function carregarLivrosDoJSON() {
                     dataTombo: livro["DATA TOMBO"],
                     origem: livro.ORIGEM,
                     situacao: livro.SITUAÇÃO
-                });
+                };
+
+                store.add(livroObj)
+                    .onsuccess = () => console.log(`📖 Livro adicionado:`, livroObj);
             });
 
             console.log("📚 Livros carregados no IndexedDB!");
@@ -121,33 +124,24 @@ function emprestarLivro() {
 
 // 📌 Função para buscar livro
 function buscarLivro() {
-    let numeroTombo = document.getElementById("buscar_tombo").value.trim(); // Remove espaços extras
+    let numeroTombo = document.getElementById("buscar_tombo").value.trim();
 
-    console.log("Buscando pelo número do tombo:", numeroTombo);
+    console.log(`🔍 Buscando livro pelo tombo: ${numeroTombo}`);
 
     let tx = db.transaction("livros", "readonly");
     let store = tx.objectStore("livros");
 
-    let request = store.get(numeroTombo); // Tenta buscar como string
+    let request = store.get(String(numeroTombo)); // 🔹 Buscar como string
 
     request.onsuccess = function () {
         let livro = request.result;
-        console.log("Resultado da busca:", livro);
-
-        if (!livro) {
-            console.log("Tentando buscar como número...");
-            let requestNumber = store.get(Number(numeroTombo));
-
-            requestNumber.onsuccess = function () {
-                livro = requestNumber.result;
-                if (livro) {
-                    mostrarLivro(livro);
-                } else {
-                    document.getElementById("livro-info").innerText = "Livro não encontrado.";
-                }
-            };
+        if (livro) {
+            console.log("✅ Livro encontrado:", livro);
+            document.getElementById("livro-info").innerText = 
+                `📖 ${livro.titulo} - ${livro.autor} (Editora: ${livro.editora}, Gênero: ${livro.genero})`;
         } else {
-            mostrarLivro(livro);
+            console.log("❌ Livro não encontrado no IndexedDB.");
+            document.getElementById("livro-info").innerText = "Livro não encontrado.";
         }
     };
 
