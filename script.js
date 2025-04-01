@@ -1,9 +1,6 @@
-// Definir a versão do banco para forçar a atualização
-let dbVersion = 2; // ALTERE ESSE NÚMERO QUANDO QUISER FORÇAR A ATUALIZAÇÃO
-
 // Criar ou abrir o banco de dados IndexedDB
 let db;
-const request = indexedDB.open("bibliotecaDB", dbVersion);
+const request = indexedDB.open("bibliotecaDB", 1);
 
 request.onupgradeneeded = function (event) {
     db = event.target.result;
@@ -298,6 +295,22 @@ function buscarlivro() {
         });
 }
 
+document.getElementById('clearDB').addEventListener('click', function () {
+    if (confirm("Tem certeza que deseja atualizar o site e limpar os dados?")) {
+        // Nome do banco de dados IndexedDB
+        let dbName = "bibliotecaDB";  
+
+        // Deleta o banco de dados
+        let req = indexedDB.deleteDatabase(dbName);
+        req.onsuccess = function () {
+            alert("Banco de dados apagado! O site será recarregado.");
+            location.reload(); // Recarrega a página
+        };
+        req.onerror = function () {
+            alert("Erro ao apagar o banco de dados.");
+        };
+    }
+});
 
 
 
