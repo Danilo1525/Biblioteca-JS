@@ -150,6 +150,8 @@ function buscarLivro() {
     };
 }
 
+
+
 // 📌 Função para exibir as informações do livro
 function mostrarLivro(livro) {
     document.getElementById("livro-info").innerText = 
@@ -236,6 +238,65 @@ function apagarEmprestimo(id) {
         listarEmprestimos();
     };
 }
+function buscarlivro() {
+    let tituloBuscado = document.getElementById("buscarLivro").value.trim().toLowerCase();
+
+    fetch("livros.json")
+        .then(response => response.json())
+        .then(livros => {
+            let listaLivros = document.getElementById("listaLivros");
+            listaLivros.innerHTML = ""; // Limpa os resultados anteriores
+
+            if (!Array.isArray(livros)) {
+                listaLivros.innerHTML = "<p>Erro: Formato de dados inválido.</p>";
+                return;
+            }
+
+            // 🔹 Ajuste para garantir que está acessando a propriedade correta do JSON
+            let livrosEncontrados = livros.filter(livro => 
+                livro.TITULO && livro.TITULO.toLowerCase().includes(tituloBuscado)
+            );
+
+            if (livrosEncontrados.length === 0) {
+                listaLivros.innerHTML = "<p>Nenhum livro encontrado.</p>";
+                return;
+            }
+
+            let total = livrosEncontrados.length;
+            let ocupados = livrosEncontrados.filter(livro => livro.SITUAÇÃO === "Emprestado").length;
+            let disponiveis = total - ocupados;
+
+            let resultadoHTML = `
+                <h2>Resultados para: "${tituloBuscado}"</h2>
+                <p><strong>Total:</strong> ${total}</p>
+                <hr>
+                `;
+                // <p><strong>Disponíveis:</strong> ${disponiveis}</p>
+                // <p><strong>Ocupados:</strong> ${ocupados}</p>
+                
+            
+
+            livrosEncontrados.forEach(livro => {
+                resultadoHTML += `
+                    <p>📖 <strong>${livro.TITULO}</strong> <br>
+                    🔢 <strong>Tombo:</strong> ${livro.numeroTombo} <br>
+                    <hr>
+                    `;
+                    // 📌 <strong>Status:</strong> ${livro.SITUAÇÃO}</p>
+                    
+                
+            });
+
+            listaLivros.innerHTML = resultadoHTML;
+        })
+        .catch(error => {
+            console.error("Erro ao carregar os livros:", error);
+            document.getElementById("listaLivros").innerHTML = "<p>Erro ao buscar livros.</p>";
+        });
+}
+
+
+
 
 // 📌 CSS para status de empréstimo
 const style = document.createElement('style');

@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Biblioteca - Gerenciamento de Empréstimos</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <h1>📚 Registrar Emprestimos</h1>
+        <nav>
+            <a href="index.html">Início</a>
+            <a href="registrarEmprestimo.html">Registrar Emprestimo</a>
+            <a href="emprestimos.html">Livros Emprestados</a>
+        </nav>
+    </header>
+
+    <div class="container">
+        <h2>Buscar Livro</h2>
+        <input type="number" id="buscar_tombo" min="1" oninput="validarNumero(this)" placeholder="Número do Tombo">
+        <button onclick="buscarLivro()">Buscar</button>
+        <p id="livro-info"></p>
+    </div>
+
+    <div class="container">
+        <h2>Registrar Empréstimo</h2>
+        <input type="number" id="tombo_emprestimo" placeholder="Número do Tombo" required>
+        <input type="number" id="quantidade_emprestimo" min="1" oninput="validarNumero(this)" placeholder="Quantidade de Livros" required>
+        <select id="tipo_pessoa" onchange="mostrarCampos()">
+            <option value="" disabled selected>Selecione o tipo</option>
+            <option value="aluno">Aluno</option>
+            <option value="professor">Professor</option>
+        </select>
+        <div id="campos_aluno" style="display: none;">
+            <input type="text" id="nome_estudante" placeholder="Nome do Aluno">
+        </div>
+        <select id="serie_estudante" required>
+            <option value="" disabled selected>Selecione a série</option>
+            <optgroup label="Ensino Fundamental">
+                <option value="6_matutino">6º Ano - Matutino</option>
+                <option value="6_vespertino">6º Ano - Vespertino</option>
+                <option value="6_integral">6º Ano - Integral</option>
+                
+                <option value="7_matutino">7º Ano - Matutino</option>
+                <option value="7_vespertino">7º Ano - Vespertino</option>
+                <option value="7_integral">7º Ano - Integral</option>
+        
+                <option value="8_matutino">8º Ano - Matutino</option>
+                <option value="8_vespertino">8º Ano - Vespertino</option>
+                <option value="8_integral">8º Ano - Integral</option>
+        
+                <option value="9_matutino">9º Ano - Matutino</option>
+                <option value="9_vespertino">9º Ano - Vespertino</option>
+                <option value="9_integral">9º Ano - Integral</option>
+            </optgroup>
+        
+            <optgroup label="Ensino Médio">
+
+                <option value="1_vespertino">1º Ano - Vespertino</option>
+                <option value="1_integral">1º Ano - Integral</option>
+        
+                <option value="2_vespertino">2º Ano - Vespertino</option>
+                <option value="2_integral">2º Ano - Integral</option>
+        
+
+                <option value="3_vespertino">3º Ano - Vespertino</option>
+                <option value="3_integral">3º Ano - Integral</option>
+            </optgroup>
+        </select>
+        <label for="turma">Turma:</label>
+<select id="turma" name="turma">
+    <option value="" disabled selected>Selecione a turma</option>
+    <option value="A">A</option>
+    <option value="B">B</option>
+    <option value="C">C</option>
+</select>
+<div id="campos_professor" style="display: none;">
+    <input type="text" id="nome_professor" placeholder="Nome do Professor">
+</div>  
+        <label for="data_devolucao">Data Máxima de Devolução:</label>
+        <input type="date" id="data_devolucao" required>
+        <button id="botaoEmprestar" onclick="emprestarLivro()">Emprestar</button>
+    </div>
+    
+    <footer>
+        <p>&copy; Biblioteca Escola Estadual Padre Josè Daniel. Todos os direitos reservados.</p>
+    </footer>
+    <script>
+        function mostrarCampos() {
+            let tipo = document.getElementById("tipo_pessoa").value;
+            document.getElementById("campos_aluno").style.display = tipo === "aluno" ? "block" : "none";
+            document.getElementById("campos_professor").style.display = tipo === "professor" ? "block" : "none";
+        }
+        function validarNumero(input) {
+    if (input.value < 0) {
+      input.value = 1;
+    }
+  }
+    </script>
+    
+    <script src="script.js"></script>
+</body>
+</html>
