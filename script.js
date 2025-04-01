@@ -295,22 +295,29 @@ function buscarlivro() {
         });
 }
 
-document.getElementById('clearDB').addEventListener('click', function () {
-    if (confirm("Tem certeza que deseja atualizar o site e limpar os dados?")) {
-        // Nome do banco de dados IndexedDB
-        let dbName = "bibliotecaDB";  
+document.addEventListener("DOMContentLoaded", function () {
+    let clearDBButton = document.getElementById('clearDB');
 
-        // Deleta o banco de dados
-        let req = indexedDB.deleteDatabase(dbName);
-        req.onsuccess = function () {
-            alert("Banco de dados apagado! O site será recarregado.");
-            location.reload(); // Recarrega a página
-        };
-        req.onerror = function () {
-            alert("Erro ao apagar o banco de dados.");
-        };
+    if (clearDBButton) {
+        clearDBButton.addEventListener('click', function () {
+            if (confirm("Tem certeza que deseja atualizar o site e limpar os dados?")) {
+                // Nome do banco de dados IndexedDB
+                let dbName = "nome_do_seu_banco";  
+
+                // Deleta o banco de dados
+                let req = indexedDB.deleteDatabase(dbName);
+                req.onsuccess = function () {
+                    alert("Banco de dados apagado! O site será recarregado.");
+                    location.reload(); // Recarrega a página
+                };
+                req.onerror = function () {
+                    alert("Erro ao apagar o banco de dados.");
+                };
+            }
+        });
     }
 });
+
 
 
 
