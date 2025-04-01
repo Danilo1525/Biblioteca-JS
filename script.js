@@ -300,23 +300,32 @@ document.addEventListener("DOMContentLoaded", function () {
 
     if (clearDBButton) {
         clearDBButton.addEventListener('click', function () {
-            if (confirm("Tem certeza que deseja atualizar o site e limpar os dados?")) {
-                // Nome do banco de dados IndexedDB
-                let dbName = "nome_do_seu_banco";  
+            if (confirm("Tem certeza que deseja apagar os dados e atualizar o site?")) {
+                let dbName = "bibliotecaDB";
+                let request = indexedDB.open(dbName);
 
-                // Deleta o banco de dados
-                let req = indexedDB.deleteDatabase(dbName);
-                req.onsuccess = function () {
-                    alert("Banco de dados apagado! O site será recarregado.");
-                    location.reload(); // Recarrega a página
+                request.onsuccess = function (event) {
+                    let db = event.target.result;
+                    let transaction = db.transaction(db.objectStoreNames, "readwrite");
+
+                    transaction.objectStoreNames.forEach(storeName => {
+                        transaction.objectStore(storeName).clear(); // Apaga os dados das tabelas
+                    });
+
+                    transaction.oncomplete = function () {
+                        alert("Dados apagados! Recarregando...");
+                        location.reload(); // Atualiza a página
+                    };
                 };
-                req.onerror = function () {
-                    alert("Erro ao apagar o banco de dados.");
+
+                request.onerror = function () {
+                    alert("Erro ao acessar o banco de dados.");
                 };
             }
         });
     }
 });
+
 
 
 
