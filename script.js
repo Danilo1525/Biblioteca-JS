@@ -1,6 +1,9 @@
+// Definir a versão do banco para forçar a atualização
+let dbVersion = 2; // ALTERE ESSE NÚMERO QUANDO QUISER FORÇAR A ATUALIZAÇÃO
+
 // Criar ou abrir o banco de dados IndexedDB
 let db;
-const request = indexedDB.open("bibliotecaDB", 1);
+const request = indexedDB.open("bibliotecaDB", dbVersion);
 
 request.onupgradeneeded = function (event) {
     db = event.target.result;
