@@ -295,37 +295,37 @@ function buscarlivro() {
         });
 }
 
-document.addEventListener("DOMContentLoaded", function () {
-    let clearDBButton = document.getElementById('clearDB');
-
-    if (clearDBButton) {
-        clearDBButton.addEventListener('click', function () {
-            if (confirm("Tem certeza que deseja apagar os dados e atualizar o site?")) {
-                let dbName = "bibliotecaDB";
-                let request = indexedDB.open(dbName);
-
-                request.onsuccess = function (event) {
-                    let db = event.target.result;
-                    let transaction = db.transaction(db.objectStoreNames, "readwrite");
-
-                    transaction.objectStoreNames.forEach(storeName => {
-                        transaction.objectStore(storeName).clear(); // Apaga os dados das tabelas
-                    });
-
-                    transaction.oncomplete = function () {
-                        alert("Dados apagados! Recarregando...");
-                        location.reload(); // Atualiza a página
-                    };
-                };
-
-                request.onerror = function () {
-                    alert("Erro ao acessar o banco de dados.");
-                };
-            }
-        });
+// Adicione este código junto com o resto do seu JavaScript
+document.getElementById('clearDB').addEventListener('click', function() {
+    if (confirm("⚠️ ATENÇÃO! Tem certeza que deseja APAGAR TODOS OS DADOS e forçar uma atualização?")) {
+        // Usando o mesmo nome do banco de dados que você definiu no open()
+        let dbName = "bibliotecaDB";
+        
+        // Fecha qualquer conexão existente primeiro
+        if (db) {
+            db.close();
+        }
+        
+        // Deleta o banco de dados
+        let req = indexedDB.deleteDatabase(dbName);
+        
+        req.onsuccess = function() {
+            console.log("Banco de dados apagado com sucesso!");
+            alert("Banco de dados apagado com sucesso! A página será recarregada.");
+            localStorage.setItem('forceReload', 'true');
+            location.reload();
+        };
+        
+        req.onerror = function() {
+            console.error("Falha ao apagar o banco de dados");
+            alert("Erro ao apagar o banco de dados. Tente novamente.");
+        };
+        
+        req.onblocked = function() {
+            alert("O banco de dados está bloqueado por outra aba. Feche outras abas do sistema e tente novamente.");
+        };
     }
 });
-
 
 
 
