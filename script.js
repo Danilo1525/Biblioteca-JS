@@ -77,13 +77,13 @@ function emprestarLivro() {
     let turma = document.getElementById("turma").value;
     let dataMaxima = document.getElementById("data_devolucao").value;
 
-    // Verificação de campos obrigatórios
+    // Validações básicas
     if (!numeroTombo || !quantidade || !tipoPessoa || !dataMaxima) {
         alert("⚠️ Por favor, preencha todos os campos obrigatórios.");
         return;
     }
 
-    // Verificação específica para aluno e professor
+    // Validações específicas
     if (tipoPessoa === "aluno" && (!estudante || !serie)) {
         alert("⚠️ Para alunos, é necessário informar o nome e a série.");
         return;
@@ -94,34 +94,47 @@ function emprestarLivro() {
     }
 
     let tx = db.transaction(["livros", "emprestimos"], "readwrite");
-    let store = tx.objectStore("livros");
+    let livrosStore = tx.objectStore("livros");
     let emprestimosStore = tx.objectStore("emprestimos");
-    let request = store.get(numeroTombo);
 
-    request.onsuccess = function () {
-        let livro = request.result;
-        if (livro) {
+    // Verifica se o livro já está emprestado
+    let emprestimoIndex = emprestimosStore.index("numeroTombo");
+    emprestimoIndex.getAll(numeroTombo).onsuccess = function(e) {
+        let emprestimosAtivos = e.target.result.filter(emp => !emp.devolvido);
+        
+        if (emprestimosAtivos.length > 0) {
+            alert("⚠️ Este livro já está emprestado!");
+            return;
+        }
+
+        // Se não estiver emprestado, prossegue
+        livrosStore.get(numeroTombo).onsuccess = function(e) {
+            let livro = e.target.result;
+            if (!livro) {
+                alert("Livro não encontrado.");
+                return;
+            }
+
             let emprestimo = {
-                numeroTombo,
+                numeroTombo: numeroTombo,
                 titulo: livro.titulo,
-                quantidade,
-                estudante,
-                prof,
-                serie,
-                turma,
+                quantidade: quantidade,
+                estudante: estudante,
+                prof: prof,
+                serie: serie,
+                turma: turma,
                 dataEmprestimo: new Date().toLocaleDateString(),
-                dataMaxima,
+                dataMaxima: dataMaxima,
                 devolvido: false
             };
-            emprestimosStore.add(emprestimo);
-            alert(`📚 ${quantidade} unidade(s) do livro "${livro.titulo}" foram emprestadas para ${estudante || prof}!`);
-            listarEmprestimos();
-        } else {
-            alert("Livro não encontrado.");
-        }
+
+            emprestimosStore.add(emprestimo).onsuccess = function() {
+                alert(`📚 Livro "${livro.titulo}" emprestado com sucesso para ${estudante || prof}!`);
+                listarEmprestimos();
+            };
+        };
     };
 }
-
 // 📌 Função para buscar livro
 function buscarLivro() {
     let numeroTombo = document.getElementById("buscar_tombo").value.trim();
@@ -181,51 +194,57 @@ function confirmarDevolucao(id) {
 // 📌 Função para listar livros emprestados com cores para status
 function listarEmprestimos() {
     let tabela = document.getElementById("tabela-emprestimos");
-    if (!tabela) {
-        console.error("Elemento 'tabela-emprestimos' não encontrado!");
-        return;
-    }
+    if (!tabela) return;
     
+    tabela.innerHTML = ""; // Limpa a tabela
+
     let tx = db.transaction("emprestimos", "readonly");
     let store = tx.objectStore("emprestimos");
     let request = store.openCursor();
 
-    tabela.innerHTML = "";
-
-    request.onsuccess = function (event) {
+    request.onsuccess = function(event) {
         let cursor = event.target.result;
         if (cursor) {
             let emprestimo = cursor.value;
             let row = document.createElement("tr");
 
+            // Verifica status
             let hoje = new Date();
             let dataMaxima = new Date(emprestimo.dataMaxima);
-            let classe = "";
-
+            let status;
+            
             if (emprestimo.devolvido) {
-                classe = "devolvido";
+                status = '✔️ Devolvido';
+                row.classList.add("devolvido");
             } else if (hoje > dataMaxima) {
-                classe = "atrasado";
+                status = '❌ Atrasado';
+                row.classList.add("atrasado");
+            } else {
+                status = '⏳ Em andamento';
             }
 
-            row.className = classe;
+            // Corrige valores undefined
+            let destinatario = emprestimo.estudante || emprestimo.prof || "N/A";
+            let turmaSerie = emprestimo.turma ? `Turma: ${emprestimo.turma}` : "";
+            turmaSerie += emprestimo.serie ? ` (${emprestimo.serie})` : "";
 
             row.innerHTML = `
-                <td>${emprestimo.devolvido ? '✔️ Devolvido' : (hoje > dataMaxima ? '❌ Atrasado' : '⏳ Em andamento')}</td>
-                <td>${emprestimo.numeroTombo}</td>
-                <td>${emprestimo.titulo} (QTD: ${emprestimo.quantidade})</td>
-                <td>${emprestimo.estudante ? `Aluno: ${emprestimo.estudante}` : `Prof: ${emprestimo.prof}`} - Turma: ${emprestimo.turma} (${emprestimo.serie})</td>
-                <td>${emprestimo.dataEmprestimo}</td>
-                <td>${emprestimo.dataMaxima}</td>
+                <td>${status}</td>
+                <td>${emprestimo.numeroTombo || "N/A"}</td>
+                <td>${emprestimo.titulo || "Sem título"} (QTD: ${emprestimo.quantidade || 1})</td>
+                <td>${destinatario} ${turmaSerie}</td>
+                <td>${emprestimo.dataEmprestimo || "N/A"}</td>
+                <td>${emprestimo.dataMaxima || "N/A"}</td>
                 <td>
-                    ${!emprestimo.devolvido ? `<button onclick="confirmarDevolucao(${emprestimo.id})">✔️ Confirmar</button>` : "Devolvido"}
+                    ${!emprestimo.devolvido ? 
+                        `<button onclick="confirmarDevolucao(${emprestimo.id})">✔️ Confirmar</button>` : 
+                        "Devolvido"}
                     <button onclick="apagarEmprestimo(${emprestimo.id})">❌ Apagar</button>
                 </td>
             `;
+            
             tabela.appendChild(row);
             cursor.continue();
-        } else {
-            console.log("Nenhum empréstimo encontrado.");
         }
     };
 }
@@ -240,59 +259,81 @@ function apagarEmprestimo(id) {
 }
 function buscarlivro() {
     let tituloBuscado = document.getElementById("buscarLivro").value.trim().toLowerCase();
+    let listaLivros = document.getElementById("listaLivros");
+    listaLivros.innerHTML = "";
 
-    fetch("livros.json")
-        .then(response => response.json())
-        .then(livros => {
-            let listaLivros = document.getElementById("listaLivros");
-            listaLivros.innerHTML = ""; // Limpa os resultados anteriores
-
-            if (!Array.isArray(livros)) {
-                listaLivros.innerHTML = "<p>Erro: Formato de dados inválido.</p>";
-                return;
-            }
-
-            // 🔹 Ajuste para garantir que está acessando a propriedade correta do JSON
-            let livrosEncontrados = livros.filter(livro => 
-                livro.TITULO && livro.TITULO.toLowerCase().includes(tituloBuscado)
-            );
-
-            if (livrosEncontrados.length === 0) {
-                listaLivros.innerHTML = "<p>Nenhum livro encontrado.</p>";
-                return;
-            }
-
-            let total = livrosEncontrados.length;
-            let ocupados = livrosEncontrados.filter(livro => livro.SITUAÇÃO === "Emprestado").length;
-            let disponiveis = total - ocupados;
-
-            let resultadoHTML = `
-                <h2>Resultados para: "${tituloBuscado}"</h2>
-                <p><strong>Total:</strong> ${total}</p>
-                <hr>
-                `;
-                // <p><strong>Disponíveis:</strong> ${disponiveis}</p>
-                // <p><strong>Ocupados:</strong> ${ocupados}</p>
-                
-            
-
-            livrosEncontrados.forEach(livro => {
-                resultadoHTML += `
-                    <p>📖 <strong>${livro.TITULO}</strong> <br>
-                    🔢 <strong>Tombo:</strong> ${livro.numeroTombo} <br>
-                    <hr>
-                    `;
-                    // 📌 <strong>Status:</strong> ${livro.SITUAÇÃO}</p>
-                    
-                
-            });
-
-            listaLivros.innerHTML = resultadoHTML;
+    // Busca simultânea nos livros e empréstimos
+    Promise.all([
+        fetch("livros.json").then(response => response.json()),
+        new Promise((resolve) => {
+            let tx = db.transaction("emprestimos", "readonly");
+            let store = tx.objectStore("emprestimos");
+            let request = store.getAll();
+            request.onsuccess = () => resolve(request.result);
         })
-        .catch(error => {
-            console.error("Erro ao carregar os livros:", error);
-            document.getElementById("listaLivros").innerHTML = "<p>Erro ao buscar livros.</p>";
+    ]).then(([livros, emprestimos]) => {
+        if (!Array.isArray(livros)) {
+            listaLivros.innerHTML = "<p>Erro: Formato de dados inválido.</p>";
+            return;
+        }
+
+        // Filtra livros pelo título
+        let livrosEncontrados = livros.filter(livro => 
+            livro.TITULO && livro.TITULO.toLowerCase().includes(tituloBuscado)
+        );
+
+        if (livrosEncontrados.length === 0) {
+            listaLivros.innerHTML = "<p>Nenhum livro encontrado.</p>";
+            return;
+        }
+
+        // Filtra empréstimos ativos (não devolvidos)
+        let emprestimosAtivos = emprestimos.filter(e => !e.devolvido);
+
+        // Calcula disponibilidade
+        let total = livrosEncontrados.length;
+        let ocupados = livrosEncontrados.filter(livro => 
+            emprestimosAtivos.some(e => e.numeroTombo === String(livro.numeroTombo))
+        ).length;
+        let disponiveis = total - ocupados;
+
+        // Monta o HTML
+        let resultadoHTML = `
+            <h2>Resultados para: "${tituloBuscado}"</h2>
+            <p><strong>Total:</strong> ${total}</p>
+            <p><strong>Disponíveis:</strong> ${disponiveis}</p>
+            <p><strong>Emprestados:</strong> ${ocupados}</p>
+            <hr>
+        `;
+
+        // Adiciona cada livro com seu status
+        livrosEncontrados.forEach(livro => {
+            let emprestimoAtivo = emprestimosAtivos.find(e => e.numeroTombo === String(livro.numeroTombo));
+            let status = emprestimoAtivo ? '❌ Emprestado' : '✅ Disponível';
+            let destinatario = emprestimoAtivo ? 
+                (emprestimoAtivo.estudante || emprestimoAtivo.prof || "N/A") : "";
+
+            resultadoHTML += `
+                <div class="livro-item">
+                    <p>📖 <strong>${livro.TITULO}</strong></p>
+                    <p>🔢 <strong>Tombo:</strong> ${livro.numeroTombo}</p>
+                    <p>📌 <strong>Status:</strong> ${status}</p>
+                    ${emprestimoAtivo ? `<p>👤 <em>Emprestado para: ${destinatario}</em></p>` : ''}
+                    <hr>
+                </div>
+            `;
         });
+
+        listaLivros.innerHTML = resultadoHTML;
+    }).catch(error => {
+        console.error("Erro:", error);
+        listaLivros.innerHTML = "<p>Erro ao buscar livros.</p>";
+    });
+}
+// Função auxiliar para pegar o nome de quem pegou o livro emprestado
+function getNomeEmprestimo(numeroTombo, emprestimosAtivos) {
+    let emprestimo = emprestimosAtivos.find(e => e.numeroTombo === String(numeroTombo));
+    return emprestimo ? (emprestimo.estudante || emprestimo.prof) : "N/A";
 }
 
 // Adicione este código junto com o resto do seu JavaScript
@@ -326,8 +367,6 @@ document.getElementById('clearDB').addEventListener('click', function() {
         };
     }
 });
-
-
 
 
 // 📌 CSS para status de empréstimo

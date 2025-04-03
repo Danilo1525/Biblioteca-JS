@@ -159,6 +159,17 @@ footer {
     padding: 1.5rem;
     margin-top: auto;
 }
+.livro-item.emprestado {
+    background-color: #f8d7da; /* Vermelho claro para emprestados */
+    padding: 10px;
+    border-radius: 5px;
+}
+
+.livro-item.disponivel {
+    background-color: #d4edda; /* Verde claro para disponíveis */
+    padding: 10px;
+    border-radius: 5px;
+}
 
 /* Responsividade */
 @media (max-width: 768px) {
