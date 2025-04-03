@@ -29,6 +29,8 @@
     <div class="container">
         <h2>Registrar Empréstimo</h2>
         <input type="number" id="tombo_emprestimo" placeholder="Número do Tombo" required>
+
+    
         <input type="number" id="quantidade_emprestimo" min="1" oninput="validarNumero(this)" placeholder="Quantidade de Livros" required>
         <select id="tipo_pessoa" onchange="mostrarCampos()">
             <option value="" disabled selected>Selecione o tipo</option>
